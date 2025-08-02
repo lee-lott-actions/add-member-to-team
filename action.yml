@@ -1,0 +1,39 @@
+name: Add Member to Team
+description: Adds a GitHub user to a specified team in an organization with a given role using the GitHub API.
+author: Louisiana Office of Technology Services
+
+inputs:
+  member-name:
+    description: 'The slugified username of the member to add (e.g., "john-doe")'
+    required: true
+  team-name:
+    description: 'The slugified name of the team (e.g., "code-approvers")'
+    required: true
+  role:
+    description: 'The role to assign to the member ("member" or "maintainer")'
+    required: true
+    default: 'member'
+  token:
+    description: 'GitHub token with organization admin permissions'
+    required: true
+  owner:
+    description: 'The owner of the organization (user or organization)'
+    required: true
+
+outputs:
+  result:
+    description: 'Result of the add member operation ("success" or "failure")'
+    value: ${{ steps.action.outputs.result }}
+  error-message:
+    description: 'Error message if the add member operation fails'
+    value: ${{ steps.action.outputs.error-message }}
+
+runs:
+  using: composite
+  steps:
+    - name: Add Member to Team
+      id: action
+      run: |
+        source ${{ github.action_path }}/action.sh
+        add_member_to_team "${{ inputs.member-name }}" "${{ inputs.team-name }}" "${{ inputs.role }}" "${{ inputs.token }}" "${{ inputs.owner }}"
+      shell: bash
