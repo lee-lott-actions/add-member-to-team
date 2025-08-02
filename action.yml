@@ -1,7 +1,6 @@
 name: Add Member to Team
 description: Adds a GitHub user to a specified team in an organization with a given role using the GitHub API.
-author: Louisiana Office of Technology Services
-
+author: Lee Lott
 inputs:
   member-name:
     description: 'The slugified username of the member to add (e.g., "john-doe")'
