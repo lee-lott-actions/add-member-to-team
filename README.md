@@ -54,7 +54,7 @@ This GitHub Action adds a GitHub user to a specified team in an organization wit
        steps:
          - name: Add Member to Team
            id: add-member
-           uses: lee-lott/add-member-to-team@v1.0.0
+           uses: lee-lott-actions/add-member-to-team@v1.0.0
            with:
              member-name: ${{ github.event.inputs.member-name }}
              team-name: ${{ github.event.inputs.team-name }}
