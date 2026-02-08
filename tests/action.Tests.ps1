@@ -58,7 +58,8 @@ Describe "Add-MemberToTeam" {
 
 		$output = Get-Content $env:GITHUB_OUTPUT
 		$output | Should -Contain "result=failure"
-		$output | Should -Contain "error-message=Failed to add member to team test-team with role member. HTTP Status: 404"
+		($output | Where-Object { $_ -match "^error-message=Error: Failed to add $MemberName to team $TeamName with role member. HTTP Status: 404" }) |
+			Should -Not -BeNullOrEmpty
 	}
 
 	It "add_member_to_team fails with invalid role" {
