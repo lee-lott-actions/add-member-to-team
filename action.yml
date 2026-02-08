@@ -32,7 +32,7 @@ runs:
   steps:
     - name: Add Member to Team
       id: action
+      shell: pwsh
       run: |
-        source ${{ github.action_path }}/action.sh
-        add_member_to_team "${{ inputs.member-name }}" "${{ inputs.team-name }}" "${{ inputs.role }}" "${{ inputs.token }}" "${{ inputs.owner }}"
-      shell: bash
+        . "${{ github.action_path }}/action.ps1"
+        Add-MemberToTeam "${{ inputs.member-name }}" "${{ inputs.team-name }}" "${{ inputs.role }}" "${{ inputs.token }}" "${{ inputs.owner }}"
