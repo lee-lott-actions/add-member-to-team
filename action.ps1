@@ -41,11 +41,10 @@ function Add-MemberToTeam {
 	$uri = "$apiBaseUrl/orgs/$Owner/teams/$TeamName/memberships/$MemberName"
 
 	$headers = @{
-		Authorization          = "Bearer $Token"
-		Accept                 = "application/vnd.github+json"
-		"Content-Type"         = "application/json"
-		"User-Agent"           = "pwsh-action"
-		"X-GitHub-Api-Version" = "2022-11-28"
+		Authorization = "Bearer $Token"
+		Accept = "application/vnd.github+json"
+		"X-GitHub-Api-Version" = "2026-03-10"
+		"Content-Type" = "application/json"		
 	}
 
 	$body = @{ role = $Role } | ConvertTo-Json -Compress
