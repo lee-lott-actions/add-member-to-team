@@ -32,12 +32,9 @@ function Add-MemberToTeam {
 		return
 	}
 
-	Write-Host "Attempting to add member '$MemberName' to team '$TeamName' in organization '$Owner' with role '$Role'"
-
 	# Use MOCK_API if set, otherwise default to GitHub API
 	$apiBaseUrl = $env:MOCK_API
 	if (-not $apiBaseUrl) { $apiBaseUrl = "https://api.github.com" }
-
 	$uri = "$apiBaseUrl/orgs/$Owner/teams/$TeamName/memberships/$MemberName"
 
 	$headers = @{
@@ -50,7 +47,8 @@ function Add-MemberToTeam {
 	$body = @{ role = $Role } | ConvertTo-Json -Compress
 
 	try {
-		$response = Invoke-WebRequest -Uri $uri -Method Put -Headers $headers -Body $body
+		Write-Host "Attempting to add member '$MemberName' to team '$TeamName' in organization '$Owner' with role '$Role'"
+		$response = Invoke-WebRequest -Uri $uri -Method Put -Headers $headers -Body $body -SkipHttpErrorCheck
 
 		if ($response.StatusCode -eq 200) {
 			Write-Host "Successfully added $MemberName to team $TeamName with role $Role."
