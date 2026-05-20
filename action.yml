@@ -40,4 +40,4 @@ runs:
           -TeamName "${{ inputs.team-name }}" `
           -Role "${{ inputs.role }}" `
           -Token "${{ inputs.token }}" `
-          Owner "${{ inputs.owner }}"
+          -Owner "${{ inputs.owner }}"
