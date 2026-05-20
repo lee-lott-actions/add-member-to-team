@@ -35,4 +35,9 @@ runs:
       shell: pwsh
       run: |
         . "${{ github.action_path }}/action.ps1"
-        Add-MemberToTeam "${{ inputs.member-name }}" "${{ inputs.team-name }}" "${{ inputs.role }}" "${{ inputs.token }}" "${{ inputs.owner }}"
+        Add-MemberToTeam `
+          -MemberName "${{ inputs.member-name }}" `
+          -TeamName "${{ inputs.team-name }}" `
+          -Role "${{ inputs.role }}" `
+          -Token "${{ inputs.token }}" `
+          Owner "${{ inputs.owner }}"
