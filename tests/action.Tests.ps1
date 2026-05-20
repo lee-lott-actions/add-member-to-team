@@ -1,123 +1,131 @@
-BeforeAll {
-	$script:MemberName = "test-user"
-	$script:TeamName   = "test-team"
-	$script:Owner      = "test-owner"
-	$script:Token      = "fake-token"
-
-	. "$PSScriptRoot/../action.ps1"
-}
-
 Describe "Add-MemberToTeam" {
+	BeforeAll {
+		$script:MemberName = "test-user"
+		$script:TeamName   = "test-team"
+		$script:Owner      = "test-owner"
+		$script:Token      = "fake-token"
+	
+		. "$PSScriptRoot/../action.ps1"
+	}
+
 	BeforeEach {
-		$env:GITHUB_OUTPUT = [System.IO.Path]::GetTempFileName()
-	}
+        $env:GITHUB_OUTPUT = New-TemporaryFile
+        $env:MOCK_API = $script:MockApiUrl
+    }
+	
+    AfterEach {
+        if (Test-Path $env:GITHUB_OUTPUT) { Remove-Item $env:GITHUB_OUTPUT }
+        Remove-Item Env:MOCK_API -ErrorAction SilentlyContinue
+    }
 
-	AfterEach {
-		if (Test-Path $env:GITHUB_OUTPUT) {
-			Remove-Item $env:GITHUB_OUTPUT -Force
-		}
-	}
-
-	It "add_member_to_team succeeds with HTTP 200 for member role" {
-		Mock Invoke-WebRequest {
-			[PSCustomObject]@{
-				StatusCode = 200
-				Content    = '{"role":"member","state":"active"}'
+	Context "Success Cases" {
+		It "unit: Add-MemberToTeam succeeds with HTTP 200 for member role" {
+			Mock Invoke-WebRequest {
+				[PSCustomObject]@{
+					StatusCode = 200
+					Content    = '{"role":"member","state":"active"}'
+				}
 			}
+	
+			Add-MemberToTeam -MemberName $MemberName -TeamName $TeamName -Role "member" -Token $Token -Owner $Owner
+	
+			$output = Get-Content $env:GITHUB_OUTPUT
+			$output | Should -Contain "result=success"
 		}
-
-		Add-MemberToTeam -MemberName $MemberName -TeamName $TeamName -Role "member" -Token $Token -Owner $Owner
-
-		$output = Get-Content $env:GITHUB_OUTPUT
-		$output | Should -Contain "result=success"
-	}
-
-	It "add_member_to_team succeeds with HTTP 200 for maintainer role" {
-		Mock Invoke-WebRequest {
-			[PSCustomObject]@{
-				StatusCode = 200
-				Content    = '{"role":"maintainer","state":"active"}'
+	
+		It "unit: Add-MemberToTeam succeeds with HTTP 200 for maintainer role" {
+			Mock Invoke-WebRequest {
+				[PSCustomObject]@{
+					StatusCode = 200
+					Content    = '{"role":"maintainer","state":"active"}'
+				}
 			}
+	
+			Add-MemberToTeam -MemberName $MemberName -TeamName $TeamName -Role "maintainer" -Token $Token -Owner $Owner
+	
+			$output = Get-Content $env:GITHUB_OUTPUT
+			$output | Should -Contain "result=success"
 		}
-
-		Add-MemberToTeam -MemberName $MemberName -TeamName $TeamName -Role "maintainer" -Token $Token -Owner $Owner
-
-		$output = Get-Content $env:GITHUB_OUTPUT
-		$output | Should -Contain "result=success"
 	}
 
-	It "add_member_to_team fails with HTTP 404 (team or user not found)" {
-		Mock Invoke-WebRequest {
-			[PSCustomObject]@{
-				StatusCode = 404
-				Content    = '{"message":"Not Found"}'
+	Context "HTTP Failure Cases" {
+		It "unit: Add-MemberToTeam fails with HTTP 404" {
+			Mock Invoke-WebRequest {
+				[PSCustomObject]@{
+					StatusCode = 404
+					Content    = '{"message":"Not Found"}'
+				}
 			}
+	
+			Add-MemberToTeam -MemberName $MemberName -TeamName $TeamName -Role "member" -Token $Token -Owner $Owner
+	
+			$output = Get-Content $env:GITHUB_OUTPUT
+			$output | Should -Contain "result=failure"
+			($output | Where-Object { $_ -match "^error-message=Error: Failed to add $MemberName to team $TeamName with role member. HTTP Status: 404" }) |
+				Should -Not -BeNullOrEmpty
+		}	
+	}
+
+	Context "Parameter Validation Failure Cases" {	
+		It "unit: Add-MemberToTeam fails with empty MemberName" {
+			Add-MemberToTeam -MemberName "" -TeamName $TeamName -Role "member" -Token $Token -Owner $Owner
+	
+			$output = Get-Content $env:GITHUB_OUTPUT
+			$output | Should -Contain "result=failure"
+			$output | Should -Contain "error-message=Missing required parameters: member-name, team-name, role, token, and owner must be provided."
 		}
+	
+		It "unit: Add-MemberToTeam fails with empty TeamName" {
+			Add-MemberToTeam -MemberName $MemberName -TeamName "" -Role "member" -Token $Token -Owner $Owner
+	
+			$output = Get-Content $env:GITHUB_OUTPUT
+			$output | Should -Contain "result=failure"
+			$output | Should -Contain "error-message=Missing required parameters: member-name, team-name, role, token, and owner must be provided."
+		}
+	
+		It "unit: Add-MemberToTeam fails with empty Role" {
+			Add-MemberToTeam -MemberName $MemberName -TeamName $TeamName -Role "" -Token $Token -Owner $Owner
+	
+			$output = Get-Content $env:GITHUB_OUTPUT
+			$output | Should -Contain "result=failure"
+			$output | Should -Contain "error-message=Missing required parameters: member-name, team-name, role, token, and owner must be provided."
+		}
+	
+		It "unit: Add-MemberToTeam fails with empty Token" {
+			Add-MemberToTeam -MemberName $MemberName -TeamName $TeamName -Role "member" -Token "" -Owner $Owner
+	
+			$output = Get-Content $env:GITHUB_OUTPUT
+			$output | Should -Contain "result=failure"
+			$output | Should -Contain "error-message=Missing required parameters: member-name, team-name, role, token, and owner must be provided."
+		}
+	
+		It "unit: Add-MemberToTeam fails with empty Owner" {
+			Add-MemberToTeam -MemberName $MemberName -TeamName $TeamName -Role "member" -Token $Token -Owner ""
+	
+			$output = Get-Content $env:GITHUB_OUTPUT
+			$output | Should -Contain "result=failure"
+			$output | Should -Contain "error-message=Missing required parameters: member-name, team-name, role, token, and owner must be provided."
+		}	
 
-		Add-MemberToTeam -MemberName $MemberName -TeamName $TeamName -Role "member" -Token $Token -Owner $Owner
-
-		$output = Get-Content $env:GITHUB_OUTPUT
-		$output | Should -Contain "result=failure"
-		($output | Where-Object { $_ -match "^error-message=Error: Failed to add $MemberName to team $TeamName with role member. HTTP Status: 404" }) |
-			Should -Not -BeNullOrEmpty
+		It "unit: Add-MemberToTeam fails with invalid Role" {
+			Add-MemberToTeam -MemberName $MemberName -TeamName $TeamName -Role "invalid-role" -Token $Token -Owner $Owner
+	
+			$output = Get-Content $env:GITHUB_OUTPUT
+			$output | Should -Contain "result=failure"
+			$output | Should -Contain "error-message=Invalid role 'invalid-role'. Must be 'member' or 'maintainer'."
+		}
 	}
 
-	It "add_member_to_team fails with invalid role" {
-		Add-MemberToTeam -MemberName $MemberName -TeamName $TeamName -Role "invalid-role" -Token $Token -Owner $Owner
-
-		$output = Get-Content $env:GITHUB_OUTPUT
-		$output | Should -Contain "result=failure"
-		$output | Should -Contain "error-message=Invalid role 'invalid-role'. Must be 'member' or 'maintainer'."
-	}
-
-	It "add_member_to_team fails with empty member_name" {
-		Add-MemberToTeam -MemberName "" -TeamName $TeamName -Role "member" -Token $Token -Owner $Owner
-
-		$output = Get-Content $env:GITHUB_OUTPUT
-		$output | Should -Contain "result=failure"
-		$output | Should -Contain "error-message=Missing required parameters: member-name, team-name, role, token, and owner must be provided."
-	}
-
-	It "add_member_to_team fails with empty team_name" {
-		Add-MemberToTeam -MemberName $MemberName -TeamName "" -Role "member" -Token $Token -Owner $Owner
-
-		$output = Get-Content $env:GITHUB_OUTPUT
-		$output | Should -Contain "result=failure"
-		$output | Should -Contain "error-message=Missing required parameters: member-name, team-name, role, token, and owner must be provided."
-	}
-
-	It "add_member_to_team fails with empty role" {
-		Add-MemberToTeam -MemberName $MemberName -TeamName $TeamName -Role "" -Token $Token -Owner $Owner
-
-		$output = Get-Content $env:GITHUB_OUTPUT
-		$output | Should -Contain "result=failure"
-		$output | Should -Contain "error-message=Missing required parameters: member-name, team-name, role, token, and owner must be provided."
-	}
-
-	It "add_member_to_team fails with empty token" {
-		Add-MemberToTeam -MemberName $MemberName -TeamName $TeamName -Role "member" -Token "" -Owner $Owner
-
-		$output = Get-Content $env:GITHUB_OUTPUT
-		$output | Should -Contain "result=failure"
-		$output | Should -Contain "error-message=Missing required parameters: member-name, team-name, role, token, and owner must be provided."
-	}
-
-	It "add_member_to_team fails with empty owner" {
-		Add-MemberToTeam -MemberName $MemberName -TeamName $TeamName -Role "member" -Token $Token -Owner ""
-
-		$output = Get-Content $env:GITHUB_OUTPUT
-		$output | Should -Contain "result=failure"
-		$output | Should -Contain "error-message=Missing required parameters: member-name, team-name, role, token, and owner must be provided."
-	}
-
-	It "writes result=failure and error-message on exception (catch block)" {
-		Mock Invoke-WebRequest { throw "API Error" }
-
-		Add-MemberToTeam -MemberName $MemberName -TeamName $TeamName -Role "member" -Token $Token -Owner $Owner
-
-		$output = Get-Content $env:GITHUB_OUTPUT
-		$output | Should -Contain "result=failure"
-		($output | Where-Object { $_ -match "^error-message=Error: Failed to add $MemberName to team $TeamName with role member\. Exception:" }) |
-			Should -Not -BeNullOrEmpty
+	Context "Exception Failure Cases" {
+		It "unit: Add-MemberToTeam fails with exception" {
+			Mock Invoke-WebRequest { throw "API Error" }
+	
+			Add-MemberToTeam -MemberName $MemberName -TeamName $TeamName -Role "member" -Token $Token -Owner $Owner
+	
+			$output = Get-Content $env:GITHUB_OUTPUT
+			$output | Should -Contain "result=failure"
+			($output | Where-Object { $_ -match "^error-message=Error: Failed to add $MemberName to team $TeamName with role member\. Exception:" }) |
+				Should -Not -BeNullOrEmpty
+		}
 	}
 }
